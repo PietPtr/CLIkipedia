@@ -6,10 +6,6 @@ Links to wikipedia pages are shown in blue with `[<key>]` behind them, hit `<key
 
 To view a next page, press space (shift space to go back). Scroll through the page with up / down arrow and page up / page down.
 
-## Implementation stuff
-
-Parse the HTML, get all the `<p>` tags and only display those (will miss some information, but good enough for now). Wikipedia links are treated specially: `<a rel="mw:WikiLink" href="./West_Philadelphia"` in the HTML that Wikipedia serves.
-
 # Sessions
 
 Sessions track interest in categories by monitoring all user input:
