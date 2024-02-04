@@ -28,7 +28,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         .style(Style::default().fg(Color::Black).bg(Color::White))
         .wrap(Wrap { trim: false })
         .scroll((app.vertical_scroll as u16, 0));
-    p.line_count(10);
+    let content_length = p.line_count(frame.size().width - 1);
 
     frame.render_widget(
         p,
@@ -39,6 +39,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             height: frame.size().height - 1,
         },
     );
+
+    app.set_scroll_params(content_length);
 
     // Scrollbar
     frame.render_stateful_widget(

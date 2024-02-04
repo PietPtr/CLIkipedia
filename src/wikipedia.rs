@@ -2,7 +2,7 @@ use reqwest::{
     header::{HeaderMap, HeaderValue, USER_AGENT},
     Response,
 };
-use std::{error::Error, future::Future};
+use std::{env, error::Error, future::Future};
 
 pub struct Wikipedia {
     client: reqwest::Client,
@@ -17,9 +17,16 @@ impl Wikipedia {
 
     fn headers() -> HeaderMap {
         let mut headers = HeaderMap::new();
+        let email = match env::var("USER_EMAIL") {
+            Ok(ref s) if s.is_empty() => {
+                panic!("No e-mail env var set. Set USER_EMAIL to your e-mail address.")
+            }
+            Ok(email) => email,
+            Err(_) => panic!("Cannot read env var USER_EMAIL."),
+        };
         headers.insert(
             USER_AGENT,
-            HeaderValue::from_str("clikipedia/1.0 (pieterstaal@outlook.com)").unwrap(),
+            HeaderValue::from_str(format!("clikipedia/1.0 ({})", email).as_str()).unwrap(),
         );
         headers
     }
