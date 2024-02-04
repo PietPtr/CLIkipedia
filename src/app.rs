@@ -188,11 +188,19 @@ impl App {
                 match elem {
                     ParagraphElement::Text(text, false) => line_vec.push(Span::raw(text)),
                     ParagraphElement::Text(text, true) => line_vec.push(Span::raw(text).italic()),
-                    ParagraphElement::Link(Link { link: _, text }) => {
-                        line_vec.push(Span::styled(
-                            text,
-                            Style::default().fg(Color::Blue).underlined(),
-                        ));
+                    ParagraphElement::Link(Link { link, text }) => {
+                        // TODO: if link counter = to_usize(selector) then this is selected
+                        let selected = if let Some(selected_link) = self.links.get(&self.selector) {
+                            selected_link.link == *link
+                        } else {
+                            false
+                        };
+                        let mut link =
+                            Span::styled(text, Style::default().fg(Color::Blue).underlined());
+                        if selected {
+                            link = link.bold();
+                        }
+                        line_vec.push(link);
                         line_vec.append(&mut self.format_link_ref(link_counter));
                         link_counter += 1;
                     }

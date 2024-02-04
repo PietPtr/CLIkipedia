@@ -1,4 +1,4 @@
-use scraper::{node::Text, ElementRef, Html, Selector};
+use scraper::{ElementRef, Html, Selector};
 use std::fmt;
 
 pub struct HtmlParser {}
