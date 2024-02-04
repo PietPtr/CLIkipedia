@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     widgets::{Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
     Frame,
 };
@@ -48,7 +48,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             .orientation(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"))
-            .style(Style::default().fg(Color::Blue)),
+            .style(Style::default().fg(Color::Black).bg(Color::Blue)),
         Rect {
             x: frame.size().width - 1,
             y: 1,
@@ -57,4 +57,25 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         },
         &mut app.vertical_scroll_state,
     );
+
+    // Link selector box
+    if !app.selector.is_empty() {
+        let text = format!("[{}]", app.selector);
+        let width = text.len() as u16;
+        let mut style = Style::default().bg(Color::Gray);
+        if app.link_selector_exists() {
+            style = style.fg(Color::Blue).bg(Color::White);
+        } else {
+            style = style.fg(Color::White).bg(Color::Red);
+        };
+        frame.render_widget(
+            Paragraph::new(text).style(style),
+            Rect {
+                x: 0,
+                y: frame.size().height - 1,
+                width,
+                height: 1,
+            },
+        )
+    }
 }

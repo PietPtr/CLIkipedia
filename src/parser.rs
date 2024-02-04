@@ -1,4 +1,4 @@
-use scraper::{ElementRef, Html, Selector};
+use scraper::{node::Text, ElementRef, Html, Selector};
 use std::fmt;
 
 pub struct HtmlParser {}
@@ -78,21 +78,23 @@ impl HtmlParser {
                     scraper::node::Node::Element(element_ref) => {
                         let mut push_text_node = |bold| {
                             // TODO: this code is bad
-                            let text = node
+                            let mut text = node
                                 .children()
-                                .filter_map(|child| ElementRef::wrap(child))
+                                .filter_map(ElementRef::wrap)
                                 .flat_map(|el| el.text())
                                 .collect::<String>();
-                            paragraph.push(ParagraphElement::Text(text, bold));
 
-                            if let Some(first_child) = node.first_child() {
-                                paragraph.push(ParagraphElement::Text(
-                                    match first_child.value().as_text() {
+                            if text.is_empty() {
+                                if let Some(first_child) = node.first_child() {
+                                    text = match first_child.value().as_text() {
                                         None => "".to_string(),
                                         Some(text) => text.to_string(),
-                                    },
-                                    bold,
-                                ));
+                                    };
+                                }
+                            }
+
+                            if !text.is_empty() {
+                                paragraph.push(ParagraphElement::Text(text, bold));
                             }
                         };
 
@@ -101,23 +103,40 @@ impl HtmlParser {
                             "b" => push_text_node(true),
                             "i" => push_text_node(true),
                             "a" => {
+                                // TODO: filter on wikimedia links
                                 if let Some(node) = node.first_child() {
-                                    paragraph.push(ParagraphElement::Link(Link {
-                                        link: element_ref.attr("href").unwrap().to_string(),
-                                        text: node.value().as_text().unwrap().to_string(),
-                                    }));
+                                    if let Some(rel) = element_ref.attr("rel") {
+                                        if rel == "mw:WikiLink" {
+                                            paragraph.push(ParagraphElement::Link(Link {
+                                                link: element_ref
+                                                    .attr("href")
+                                                    .map(|v| v.to_string())
+                                                    .unwrap_or("??".to_string()),
+                                                text: node
+                                                    .value()
+                                                    .as_text()
+                                                    .map(|v| v.to_string())
+                                                    .unwrap_or("??".to_string()),
+                                            }));
+                                        }
+                                    }
                                 }
                             }
                             _ => {}
                         }
                     }
                     scraper::node::Node::Text(text) => {
-                        paragraph.push(ParagraphElement::Text(text.text.to_string(), false));
+                        let text = text.text.to_string();
+                        if !text.is_empty() {
+                            paragraph.push(ParagraphElement::Text(text, false));
+                        }
                     }
                     _ => (),
                 };
             }
-            paragraphs.push(paragraph);
+            if !paragraph.elems.is_empty() {
+                paragraphs.push(paragraph);
+            }
         }
 
         let title_selector = Selector::parse("title").unwrap();

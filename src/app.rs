@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     error::{self, Error},
     fs::{create_dir_all, File},
     io::Write,
@@ -14,6 +15,7 @@ use ratatui::{
 };
 
 use crate::{
+    flog,
     parser::{HtmlParser, Link, Paragraph, ParagraphElement},
     wikipedia::Wikipedia,
 };
@@ -22,13 +24,16 @@ pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 pub struct App {
     pub running: bool,
+    // TODO: make a struct for pages with title, paragraphs, and links.
     pub paragraphs: Vec<Paragraph>,
     pub page_title: String,
+    links: HashMap<String, Link>,
     pub vertical_scroll: usize,
     pub vertical_scroll_state: ScrollbarState,
     pub frame_size: Rect,
     page_content_length: usize,
     wikipedia: Wikipedia,
+    pub selector: String,
 }
 
 impl Default for App {
@@ -47,6 +52,8 @@ impl Default for App {
             },
             page_content_length: 0,
             wikipedia: Wikipedia::new(),
+            selector: String::new(),
+            links: HashMap::new(),
         }
     }
 }
@@ -72,6 +79,32 @@ impl App {
         self.frame_size.height = height;
     }
 
+    pub fn link_select(&mut self, c: char) {
+        if self.link_selector_exists() | self.selector.is_empty() {
+            self.selector.push(c);
+        }
+    }
+
+    pub fn delete_link_selector(&mut self) {
+        self.selector.pop();
+    }
+
+    pub async fn go_to_selected_link(&mut self) {
+        if let Some(link) = self.links.get(&self.selector) {
+            self.selector = String::new();
+            // TODO: this await blocks the whole app, should not be awaited but there should be some sort of callback and some state and a loading icon
+            let html = self.wikipedia.get_page(&link.link).await;
+            match html {
+                Ok(html) => self.set_html(&html),
+                Err(_) => todo!(),
+            }
+        }
+    }
+
+    pub fn link_selector_exists(&self) -> bool {
+        self.links.get(&self.selector).is_some()
+    }
+
     pub fn scroll(&mut self, key: KeyCode) {
         enum Direction {
             Up,
@@ -88,8 +121,10 @@ impl App {
 
         match direction {
             Direction::Down => {
-                self.vertical_scroll =
-                    (self.vertical_scroll + amount).min(self.page_content_length - 1)
+                self.vertical_scroll = (self.vertical_scroll + amount).min(
+                    self.page_content_length.saturating_sub(5),
+                    // .saturating_sub(self.frame_size.height as usize  / 2),
+                )
             }
             Direction::Up => self.vertical_scroll = self.vertical_scroll.saturating_sub(amount),
         }
@@ -103,10 +138,26 @@ impl App {
     }
 
     pub fn set_html(&mut self, html: &str) {
-        let page = HtmlParser::parse_page(&html);
+        let page = HtmlParser::parse_page(html);
 
         self.page_title = page.title;
         self.paragraphs = page.paragraphs.clone();
+
+        let mut num_links = 0;
+        self.links.clear();
+        for p in &self.paragraphs {
+            for e in &p.elems {
+                match e {
+                    ParagraphElement::Link(link) => {
+                        self.links
+                            .insert(Self::usize_to_base26(num_links), link.clone());
+                        num_links += 1;
+                    }
+                    _ => (),
+                }
+            }
+        }
+        flog!(self.links);
 
         self.vertical_scroll = 0;
         self.vertical_scroll_state = ScrollbarState::default();
@@ -128,21 +179,50 @@ impl App {
     }
 
     pub fn get_text(&self) -> Vec<Line<'_>> {
+        let mut link_counter = 0;
         let mut lines = vec![];
         for paragraph in &self.paragraphs {
+            // let mut line_vec = vec![Span::raw(format!("{:?}: ", paragraph.elems))];
             let mut line_vec = vec![];
             for elem in &paragraph.elems {
-                let span = match elem {
-                    ParagraphElement::Text(text, false) => Span::raw(text),
-                    ParagraphElement::Text(text, true) => Span::raw(text).italic(),
+                match elem {
+                    ParagraphElement::Text(text, false) => line_vec.push(Span::raw(text)),
+                    ParagraphElement::Text(text, true) => line_vec.push(Span::raw(text).italic()),
                     ParagraphElement::Link(Link { link: _, text }) => {
-                        Span::styled(text, Style::default().fg(Color::Blue).underlined())
+                        line_vec.push(Span::styled(
+                            text,
+                            Style::default().fg(Color::Blue).underlined(),
+                        ));
+                        line_vec.append(&mut self.format_link_ref(link_counter));
+                        link_counter += 1;
                     }
                 };
-                line_vec.push(span);
             }
-            lines.push(Line::from(line_vec));
+            if !line_vec.is_empty() {
+                lines.push(Line::from(line_vec));
+                lines.push(Line::from(vec![]));
+            }
         }
         lines.clone()
+    }
+
+    // TODO: utils lib?
+    fn usize_to_base26(mut num: usize) -> String {
+        let mut result = Vec::new();
+        while num >= 26 {
+            let remainder = num % 26;
+            result.push((remainder as u8 + b'a') as char);
+            num = num / 26 - 1;
+        }
+        result.push((num as u8 + b'a') as char);
+        result.into_iter().rev().collect()
+    }
+
+    fn format_link_ref(&self, link_counter: usize) -> Vec<Span> {
+        // TODO: here should be some if thingy based on what selector is live
+        vec![Span::styled(
+            format!("[{}]", Self::usize_to_base26(link_counter)),
+            Style::default().fg(Color::Blue),
+        )]
     }
 }

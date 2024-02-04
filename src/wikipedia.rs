@@ -31,13 +31,28 @@ impl Wikipedia {
         headers
     }
 
-    fn get(&self, endpoint: String) -> impl Future<Output = Result<Response, reqwest::Error>> {
+    pub fn get(&self, endpoint: String) -> impl Future<Output = Result<Response, reqwest::Error>> {
         self.client
             .get(format!(
                 "https://en.wikipedia.org/api/rest_v1/page/{endpoint}"
             ))
             .headers(Wikipedia::headers())
             .send()
+    }
+
+    pub async fn get_page(&self, page: &str) -> Result<String, Box<dyn Error>> {
+        let response = self
+            .client
+            .get(format!(
+                "https://en.wikipedia.org/api/rest_v1/page/html/{}",
+                page
+            ))
+            .headers(Wikipedia::headers())
+            .send()
+            .await?;
+
+        let html = response.text().await?;
+        Ok(html)
     }
 
     pub async fn random_page(&self) -> Result<String, Box<dyn Error>> {
