@@ -112,6 +112,8 @@ impl App {
         }
 
         let (amount, direction) = match key {
+            KeyCode::Home => (usize::MAX, Direction::Up),
+            KeyCode::End => (usize::MAX, Direction::Down),
             KeyCode::Up => (1, Direction::Up),
             KeyCode::Down => (1, Direction::Down),
             KeyCode::PageUp => (self.frame_size.height as usize - 2, Direction::Up),
@@ -198,7 +200,7 @@ impl App {
                         let mut link =
                             Span::styled(text, Style::default().fg(Color::Blue).underlined());
                         if selected {
-                            link = link.bold();
+                            link = link.bg(Color::Blue).fg(Color::White);
                         }
                         line_vec.push(link);
                         line_vec.append(&mut self.format_link_ref(link_counter));

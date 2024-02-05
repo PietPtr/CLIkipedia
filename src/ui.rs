@@ -14,7 +14,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     // Title bar
     frame.render_widget(
         Paragraph::new(app.page_title.clone())
-            .style(Style::default().fg(Color::White).bg(Color::Blue)),
+            .style(Style::default().fg(Color::White).bg(Color::LightBlue)),
         Rect {
             x: 0,
             y: 0,
@@ -46,9 +46,9 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     frame.render_stateful_widget(
         Scrollbar::default()
             .orientation(ScrollbarOrientation::VerticalRight)
-            .begin_symbol(Some("↑"))
-            .end_symbol(Some("↓"))
-            .style(Style::default().fg(Color::Black).bg(Color::Blue)),
+            .begin_symbol(Some("|"))
+            .end_symbol(Some("|"))
+            .style(Style::default().fg(Color::White).bg(Color::LightBlue)),
         Rect {
             x: frame.size().width - 1,
             y: 1,

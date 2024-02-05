@@ -11,8 +11,14 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         }
         _ => (),
     }
+    // TODO: add a back key
     match key_event.code {
-        KeyCode::Down | KeyCode::Up | KeyCode::PageDown | KeyCode::PageUp => {
+        KeyCode::Down
+        | KeyCode::Up
+        | KeyCode::PageDown
+        | KeyCode::PageUp
+        | KeyCode::Home
+        | KeyCode::End => {
             app.scroll(key_event.code);
         }
         KeyCode::Char(' ') => {

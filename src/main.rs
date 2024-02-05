@@ -39,7 +39,7 @@ async fn main() -> AppResult<()> {
         println!("Searching for page: {}", page_str);
         unimplemented!();
     } else {
-        println!("No arguments provided.");
+        // TODO: don't do this on start up, do this in app so we can display a load icon
         app.new_page().await?;
     }
 
