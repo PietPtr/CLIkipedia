@@ -120,6 +120,9 @@ impl HtmlParser {
                                             }));
                                         }
                                     }
+                                } else {
+                                    // TODO: this doesn't render external links somehow... Look at the Making History II page.
+                                    push_text_node(true);
                                 }
                             }
                             _ => {}

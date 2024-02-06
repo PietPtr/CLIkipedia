@@ -17,6 +17,7 @@ use ratatui::{
 use crate::{
     flog,
     parser::{HtmlParser, Link, Paragraph, ParagraphElement},
+    util::{base26_to_usize, usize_to_base26},
     wikipedia::Wikipedia,
 };
 
@@ -160,8 +161,7 @@ impl App {
             for e in &p.elems {
                 match e {
                     ParagraphElement::Link(link) => {
-                        self.links
-                            .insert(Self::usize_to_base26(num_links), link.clone());
+                        self.links.insert(usize_to_base26(num_links), link.clone());
                         num_links += 1;
                     }
                     _ => (),
@@ -199,13 +199,10 @@ impl App {
                 match elem {
                     ParagraphElement::Text(text, false) => line_vec.push(Span::raw(text)),
                     ParagraphElement::Text(text, true) => line_vec.push(Span::raw(text).italic()),
-                    ParagraphElement::Link(Link { link, text }) => {
+                    ParagraphElement::Link(Link { link: _, text }) => {
                         // TODO: if link counter = to_usize(selector) then this is selected
-                        let selected = if let Some(selected_link) = self.links.get(&self.selector) {
-                            selected_link.link == *link
-                        } else {
-                            false
-                        };
+                        let selected = !self.selector.is_empty()
+                            && link_counter == base26_to_usize(&self.selector);
                         let mut style = Style::default();
                         if selected {
                             style = style.bg(Color::Blue).fg(Color::White);
@@ -227,21 +224,9 @@ impl App {
         lines.clone()
     }
 
-    // TODO: utils lib?
-    fn usize_to_base26(mut num: usize) -> String {
-        let mut result = Vec::new();
-        while num >= 26 {
-            let remainder = num % 26;
-            result.push((remainder as u8 + b'a') as char);
-            num = num / 26 - 1;
-        }
-        result.push((num as u8 + b'a') as char);
-        result.into_iter().rev().collect()
-    }
-
     fn format_link_ref(&self, link_counter: usize, style: Style) -> Vec<Span> {
         vec![Span::styled(
-            format!("[{}]", Self::usize_to_base26(link_counter)),
+            format!("[{}]", usize_to_base26(link_counter)),
             style,
         )]
     }
