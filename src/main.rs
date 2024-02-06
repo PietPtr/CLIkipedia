@@ -38,9 +38,6 @@ async fn main() -> AppResult<()> {
     } else if let Some(page_str) = matches.get_one::<String>("page") {
         println!("Searching for page: {}", page_str);
         unimplemented!();
-    } else {
-        // TODO: don't do this on start up, do this in app so we can display a load icon
-        app.new_page().await?;
     }
 
     let backend = CrosstermBackend::new(io::stderr());
@@ -48,6 +45,7 @@ async fn main() -> AppResult<()> {
     let events = EventHandler::new(250);
     let mut tui = Tui::new(terminal, events);
     tui.init()?;
+    app.init().await?;
 
     while app.running {
         tui.draw(&mut app)?;

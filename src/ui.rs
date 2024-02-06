@@ -35,7 +35,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         Rect {
             x: 0,
             y: 1,
-            width: frame.size().width - 1,
+            width: frame.size().width - 1, // TODO: this should be a value accesible from everywhere
             height: frame.size().height - 1,
         },
     );

@@ -127,7 +127,7 @@ impl HtmlParser {
                     }
                     scraper::node::Node::Text(text) => {
                         let text = text.text.to_string();
-                        if !text.is_empty() {
+                        if !text.trim().is_empty() {
                             paragraph.push(ParagraphElement::Text(text, false));
                         }
                     }

@@ -64,6 +64,15 @@ impl App {
         Self::default()
     }
 
+    pub async fn init(&mut self) -> Result<(), Box<dyn Error>> {
+        if self.page_title.len() == 0 {
+            // TODO: put page struct (see other todo) in an optional
+            self.new_page().await
+        } else {
+            Ok(())
+        }
+    }
+
     /// Handles the tick event of the terminal.
     pub fn tick(&mut self) {
         // self.page_title = format!("{:?}", self.page_content_length);
@@ -197,13 +206,15 @@ impl App {
                         } else {
                             false
                         };
-                        let mut link =
-                            Span::styled(text, Style::default().fg(Color::Blue).underlined());
+                        let mut style = Style::default();
                         if selected {
-                            link = link.bg(Color::Blue).fg(Color::White);
+                            style = style.bg(Color::Blue).fg(Color::White);
+                        } else {
+                            style = style.fg(Color::Blue).underlined();
                         }
+                        let link = Span::styled(text, style);
                         line_vec.push(link);
-                        line_vec.append(&mut self.format_link_ref(link_counter));
+                        line_vec.append(&mut self.format_link_ref(link_counter, style));
                         link_counter += 1;
                     }
                 };
@@ -228,11 +239,10 @@ impl App {
         result.into_iter().rev().collect()
     }
 
-    fn format_link_ref(&self, link_counter: usize) -> Vec<Span> {
-        // TODO: here should be some if thingy based on what selector is live
+    fn format_link_ref(&self, link_counter: usize, style: Style) -> Vec<Span> {
         vec![Span::styled(
             format!("[{}]", Self::usize_to_base26(link_counter)),
-            Style::default().fg(Color::Blue),
+            style,
         )]
     }
 }
